@@ -1,0 +1,1 @@
+key = "yagataulahkenapa".encode('utf-8')
