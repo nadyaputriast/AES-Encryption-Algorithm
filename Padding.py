@@ -1,10 +1,19 @@
-from Encrypt import aes_encrypt 
+from Encrypt import aes_encrypt
 
+# adding padding to plaintext to make it a multiple of 16 bytes
 def pad_data(data, block_size=16):
-    padding_length = block_size - (len(data) % block_size)
+    if isinstance(data, str):
+        data = data.encode('utf-8')
+
+    remainder = len(data) % block_size
+    if remainder == 0:
+        return data
+
+    padding_length = block_size - remainder
     padding = bytes([padding_length]) * padding_length
     return data + padding
 
+# to ensure the key is having the desired length (16/24/32 bytes)
 def derive_key(key_material, desired_length):
     if len(key_material) >= desired_length:
         return key_material[:desired_length]  
@@ -13,24 +22,28 @@ def derive_key(key_material, desired_length):
         result += key_material
     return result[:desired_length]
 
-def aes_encrypt_with_padding(plaintext, key_material, key_size=16):
-
+# encrypt each block of plaintext using AES
+def aes_encrypt_with_padding(plaintext, key_material, key_size, debug=False):
     if isinstance(key_material, str):
         key_material = key_material.encode('utf-8')
     
     if isinstance(plaintext, str):
         plaintext = plaintext.encode('utf-8')
-    
 
     key = derive_key(key_material, key_size)
-    
-
-    padded_plaintext = pad_data(plaintext)
+    padded_plaintext = pad_data(plaintext, 16)
     
     ciphertext = b''
+    steps = []  # To store all steps if debugging is enabled
     for i in range(0, len(padded_plaintext), 16):
         block = padded_plaintext[i:i+16]
-        encrypted_block = aes_encrypt(block, key)
+        if debug:
+            encrypted_block, block_steps = aes_encrypt(block, key, debug=True)
+            for step in block_steps:
+                step["block"] = i // 16
+            steps.extend(block_steps)
+        else:
+            encrypted_block = aes_encrypt(block, key)
         ciphertext += encrypted_block
-    
-    return ciphertext
+
+    return (ciphertext, steps) if debug else ciphertext
