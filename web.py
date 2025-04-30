@@ -61,7 +61,7 @@ def main():
             st.error("Kunci tidak boleh kosong!")
             return
             
-        key_len = len(user_key.encode('utf-8'))  # Ensure we use byte length
+        key_len = len(user_key.encode('utf-8'))
 
         if key_len not in [16, 24, 32]:
             st.error(f"Panjang kunci saat ini: {key_len} byte. Masukkan kunci yang panjangnya 16, 24, atau 32 byte.")
@@ -116,24 +116,7 @@ def main():
         except Exception as e:
             st.error(f"Error dalam proses enkripsi: {str(e)}")
             return
-        
-        # If the input from a file, the output also needs to be a file
-        if input_method == "Unggah File":
-            with tempfile.NamedTemporaryFile(delete=False, suffix=".bin") as tmp_file:
-                tmp_file.write(ciphertext)
-                tmp_file_path = tmp_file.name
-
-            with open(tmp_file_path, "rb") as f:
-                st.download_button(
-                    label="Download Hasil Enkripsi",
-                    data=f,
-                    file_name="encrypted_output.bin",
-                    mime="application/octet-stream"
-                )
-
-            # Hapus file temp jika mau
-            os.remove(tmp_file_path)
-             
+                   
         # Organize steps by block
         steps_by_block = {}
         for step in all_steps:
@@ -208,6 +191,24 @@ def main():
         st.write("### Final Ciphertext")
         ciphertext_hex = ciphertext.hex().upper()
         st.success("Enkripsi berhasil dilakukan!")
+        
+        # If the input from a file, the output also needs to be a file
+        if input_method == "Unggah File":
+
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".txt") as tmp_txt_file:
+                tmp_txt_file.write(ciphertext.hex().upper().encode('utf-8'))
+                tmp_txt_file_path = tmp_txt_file.name
+
+            with open(tmp_txt_file_path, "r") as f_txt:
+                st.download_button(
+                    label="Download Hasil Enkripsi (Text)",
+                    data=f_txt,
+                    file_name="encrypted_output.txt",
+                    mime="text/plain"
+                )
+                
+            os.remove(tmp_txt_file_path)
+            
         st.write("Ciphertext (Hex):")
         st.code(ciphertext_hex, language="plaintext")
         
