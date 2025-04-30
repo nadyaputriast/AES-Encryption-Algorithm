@@ -28,19 +28,15 @@ def key_expansion(key):
     def rot_word(word):
         return word[1:] + word[:1]
     
-
     key_schedule_words = 4 * (Nr + 1)
     
-
     key_as_words = []
     for i in range(0, key_bytes, 4):
         word = key[i:i+4]
         key_as_words.append(list(word))
     
-
     expanded_key_words = key_as_words.copy()
     
-
     for i in range(Nk, key_schedule_words):
         temp = list(expanded_key_words[i-1])
         
@@ -64,3 +60,36 @@ def key_expansion(key):
         round_keys.append(round_key)
     
     return round_keys
+
+def print_key_bytes(round_keys):
+    for i, round_key in enumerate(round_keys):
+        print(f"Round {i} Key:")
+        for row in round_key:
+            hex_row = [format(b, '02x') for b in row]
+            print(" ".join(hex_row))
+        print()
+
+def print_key_matrix(round_keys):
+    for i, round_key in enumerate(round_keys):
+        print(f"Round {i} Key (Matrix Format):")
+        # Convert to more readable format
+        for row in round_key:
+            print([format(b, '02x') for b in row])
+        print()
+
+def main():
+    # Use the key "halohalohalohalo"
+    key = b"halohalohalohalo"
+    print(f"Original Key: {key.decode()} (ASCII)")
+    print(f"Key in Hex: {key.hex()}")
+    print(f"Key Length: {len(key)} bytes\n")
+    
+    round_keys = key_expansion(key)
+    
+    # Print each round key in both formats
+    print_key_bytes(round_keys)
+    print("=" * 40 + "\n")
+    print_key_matrix(round_keys)
+
+if __name__ == "__main__":
+    main()

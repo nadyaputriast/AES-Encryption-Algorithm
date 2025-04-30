@@ -1,6 +1,8 @@
 import streamlit as st
 from Padding import pad_data, aes_encrypt_with_padding, aes_encrypt_without_padding
 from PredefinedKey import key
+import tempfile
+import os
 
 def display_matrix(matrix):
     """Helper function to display a 4x4 matrix in Streamlit."""
@@ -12,32 +14,41 @@ def main():
     st.markdown("# AES Encryption")
 
     # Form untuk input pengguna
-    with st.form(key="encryption_form"):
+    input_method = st.radio("Pilih metode input:", ("Tulis Plaintext", "Unggah File"))
+
+    if input_method == "Tulis Plaintext":
         plaintext = st.text_input("Masukkan plaintext:", key="plaintext")
-
-        key_option = st.radio(
-            "Pilih metode kunci:", 
-            ("Gunakan kunci sendiri", "Gunakan kunci bawaan"),
-            key="key_option"
-        )
-
-        predefined_key = key.decode('utf-8')
-
-        if key_option == "Gunakan kunci sendiri":
-            user_key = st.text_input("Masukkan kunci:", key="user_key", type="password")
+    else:
+        uploaded_file = st.file_uploader("Unggah file (txt):", type=["txt"])
+        if uploaded_file is not None:
+            plaintext = uploaded_file.read().decode("utf-8")
+            st.text_area("Isi file:", plaintext, height=200)
         else:
-            user_key = predefined_key
-            show_predefined_key = st.checkbox("Tampilkan kunci bawaan")
-            if show_predefined_key:
-                st.write(f"Predefined Key: `{user_key}`")
-            else:
-                st.write("Predefined Key: `********`")
-        
-        # Tambahkan opsi padding             
-        use_padding = st.checkbox("Gunakan Padding", value=True, help="Jika dicentang, plaintext akan dipadding hingga kelipatan 16 bytes")
-        
-        # Tombol submit
-        submit_button = st.form_submit_button(label="Enkripsi")
+            plaintext = ""
+
+    key_option = st.radio(
+        "Pilih metode kunci:", 
+        ("Gunakan kunci sendiri", "Gunakan kunci bawaan"),
+        key="key_option"
+    )
+
+    predefined_key = key.decode('utf-8')
+
+    if key_option == "Gunakan kunci sendiri":
+        user_key = st.text_input("Masukkan kunci:", key="user_key", type="password")
+    else:
+        user_key = predefined_key
+        show_predefined_key = st.checkbox("Tampilkan kunci bawaan")
+        if show_predefined_key:
+            st.write(f"Predefined Key: `{user_key}`")
+        else:
+            st.write("Predefined Key: `********`")
+    
+    # Tambahkan opsi padding             
+    use_padding = st.checkbox("Gunakan Padding", value=True, help="Jika dicentang, plaintext akan dipadding hingga kelipatan 16 bytes")
+    
+    # Tombol submit
+    submit_button = st.button(label="Enkripsi")
 
     # Tampilkan hasil enkripsi jika tombol telah ditekan
     if submit_button:
@@ -105,7 +116,24 @@ def main():
         except Exception as e:
             st.error(f"Error dalam proses enkripsi: {str(e)}")
             return
-            
+        
+        # If the input from a file, the output also needs to be a file
+        if input_method == "Unggah File":
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".bin") as tmp_file:
+                tmp_file.write(ciphertext)
+                tmp_file_path = tmp_file.name
+
+            with open(tmp_file_path, "rb") as f:
+                st.download_button(
+                    label="Download Hasil Enkripsi",
+                    data=f,
+                    file_name="encrypted_output.bin",
+                    mime="application/octet-stream"
+                )
+
+            # Hapus file temp jika mau
+            os.remove(tmp_file_path)
+             
         # Organize steps by block
         steps_by_block = {}
         for step in all_steps:
